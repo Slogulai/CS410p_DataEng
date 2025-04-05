@@ -4,16 +4,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 
-# Set pandas display options to avoid truncation
-#pd.set_option('display.max_colwidth', None)  # Prevent truncation of column content
-#pd.set_option('display.max_columns', None)  # Show all columns
+# pandas display options
+# pd.set_option('display.max_colwidth', None)  # Prevent truncation of column content
+pd.set_option('display.max_columns', None)  # Show all columns
 #pd.set_option('display.width', None)        # Adjust the display width to fit the terminal
 
 
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
-url = "http://www.hubertiming.com/results/2017GPTR10K"
+#url = "http://www.hubertiming.com/results/2017GPTR10K"
+url = "http://www.hubertiming.com/results/2023WyEasterLong"
 html = urlopen(url)
 
 soup = BeautifulSoup(html, 'html.parser')
@@ -95,4 +96,72 @@ df6 = df5.dropna(axis=0, how='any')
 df6.shape
 
 df7 = df6.drop(df6.index[0])
-print(df7.head())
+#print(df7.head())
+
+df7.rename(columns={'[Place': 'Place',}, inplace=True)
+df7.rename(columns={' Team]': 'Team',}, inplace=True)
+#print(df7.head())
+
+if 'Team' in df7.columns:
+    df7['Team'] = df7['Team'].str.strip(']')
+#print(df7.head())
+
+time_list = df7[' Time'].tolist()
+time_mins = []
+for i in time_list:
+    sections = i.split(':')
+    if len(sections) == 3:  
+        h, m, s = sections
+        math = (int(h) * 60) + int(m) + (int(s) / 60)
+    elif len(sections) == 2:  
+        m, s = sections
+        math = int(m) + (int(s) / 60)
+    else:  
+        math = 0  
+        print(f"Unexpected time format: {i}")
+    time_mins.append(math)
+
+df7['Runner_mins'] = time_mins
+#print(df7.head())
+df7.describe(include=[np.number])
+
+from pylab import rcParams
+rcParams['figure.figsize'] = 15, 5
+
+
+df7.boxplot(column='Runner_mins')
+plt.grid(True, axis='y')
+plt.ylabel('Chip Time')
+plt.xticks([1], ['Runners'])
+x = df7['Runner_mins']
+
+ax = sns.displot(x=x, kde=True, color='m', bins=25, edgecolor="black")
+
+plt.figure(figsize=(15, 5))
+
+f_fuko = df7.loc[df7[' Gender']==' F']['Runner_mins']
+m_fuko = df7.loc[df7[' Gender']==' M']['Runner_mins']
+
+sns.histplot(f_fuko, kde=True, edgecolor='black', color='skyblue', alpha=0.6, label='Female (hist)')
+sns.kdeplot(f_fuko, color='blue', linewidth=2, label='Female (kde)')
+
+ax2 = plt.twinx()
+sns.kdeplot(m_fuko, color='orange', linewidth=2, label='Male', ax=ax2)
+
+handles, labels = plt.gca().get_legend_handles_labels()
+handles2, labels2 = ax2.get_legend_handles_labels()
+plt.legend(handles + handles2, labels + labels2, loc='best')
+
+ax2.set_ylabel('')
+
+plt.xlabel('Runner Minutes')
+plt.title('Distribution of Runner Times by Gender')
+#plt.show()
+
+g_stats = df7.groupby(" Gender", as_index=True).describe()
+print(g_stats)
+
+df7.boxplot(column='Runner_mins', by=' Gender')
+plt.ylabel('Chip Time')
+plt.suptitle("")
+plt.show()
