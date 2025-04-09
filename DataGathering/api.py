@@ -1,6 +1,3 @@
-import requests
-from datetime import datetime
-
 API_KEY = 'cd599e348f1146e9ba9621fb7322bbbe'
 
 city = 'Portland,US-OR'
