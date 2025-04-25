@@ -27,19 +27,11 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:
     global message_counter
     try:
         data = json.loads(message.data.decode('utf-8'))
-
         with open(output_file, 'a') as f:
-            if os.path.getsize(output_file) == 0:
-                f.write('[\n')  
-            else:
-                f.write(',\n')  
-            f.write(json.dumps(data))
-
+            f.write(json.dumps(data, separators=(',', ':')) + "\n")
         message_counter += 1
-
         if message_counter % 50000 == 0:
             print(f"Processed {message_counter} messages so far...")
-
         message.ack()  
     except Exception as e:
         print(f"Error processing message: {e}")

@@ -2,3 +2,6 @@
 2*
 venv
 .venv
+combine_json.py
+.DS_Store
+Archive.zip
